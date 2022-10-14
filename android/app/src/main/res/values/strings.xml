@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="facebook_app_id">457508016360030</string>
+    <string name="app_name">side_hustle_week_one</string>
+    <string name="fb_login_protocol_scheme">fb457508016360030</string>
+    <string name="facebook_client_token">93c134bbe189ad728561d815439f1781</string>
+</resources>
