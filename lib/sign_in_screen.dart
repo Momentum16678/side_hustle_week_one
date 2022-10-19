@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -16,7 +15,6 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-
   GoogleSignInAccount? _currentUser;
 
   @override
@@ -35,7 +33,7 @@ class _SignInScreenState extends State<SignInScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Login",
+          "Location Calculator",
           style: TextStyle(color: Colors.white),
         ),
       ),
@@ -43,64 +41,35 @@ class _SignInScreenState extends State<SignInScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
+            height: 50,
             padding: const EdgeInsets.only(left: 10, right: 10),
-            child: MaterialButton(
-              color: Colors.white,
-              elevation: 2,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    alignment: Alignment.center,
-                    height: 50.0,
-                    width: 30.0,
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('images/google_icon.png'),
-                      ),
-                      shape: BoxShape.circle,
-                    ),
+                  SignInButton(
+                    Buttons.Google,
+                    onPressed: () {
+                      signup(context);
+                    },
                   ),
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  const Text("Sign In with Google",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold
-                    ),
-                  )
                 ],
               ),
-              onPressed: () {
-                signup(context);
-              },
-            ),
           ),
           const SizedBox(
             height: 20,
           ),
           Container(
-            padding: const EdgeInsets.only(left: 10, right: 10),
-            child: MaterialButton(
-              elevation: 2,
-              color: Colors.blue,
-              onPressed: () {
-                signInWithFacebook();
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+              height: 50,
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SignInButton(
-                    Buttons.Facebook,
-                    onPressed: () {
-                      signInWithFacebook();
-                    },
-                  ),
-               ]
-              )
-            ),
-          ),
+                SignInButton(
+                  Buttons.Facebook,
+                  onPressed: () {
+                    signInWithFacebook();
+                  },
+                ),
+              ])),
         ],
       ),
     );
@@ -108,22 +77,22 @@ class _SignInScreenState extends State<SignInScreen> {
 
   void signInWithFacebook() async {
     try {
-      final LoginResult result = await FacebookAuth.instance.login(
-          permissions: (['email', 'public_profile']));
+      final LoginResult result = await FacebookAuth.instance
+          .login(permissions: (['email', 'public_profile']));
       final token = result.accessToken!.token;
       print(
           'Facebook token userID : ${result.accessToken!.grantedPermissions}');
-      final graphResponse = await http.get(
-          Uri.parse('https://graph.facebook.com/'
-              'v2.12/me?fields=name,first_name,last_name,email&access_token=${token}'));
+      final graphResponse = await http.get(Uri.parse(
+          'https://graph.facebook.com/'
+          'v2.12/me?fields=name,first_name,last_name,email&access_token=${token}'));
 
       final profile = jsonDecode(graphResponse.body);
       print("Profile is equal to $profile");
       try {
-        final AuthCredential facebookCredential = FacebookAuthProvider
-            .credential(result.accessToken!.token);
-        final userCredential = await FirebaseAuth.instance.signInWithCredential(
-            facebookCredential);
+        final AuthCredential facebookCredential =
+            FacebookAuthProvider.credential(result.accessToken!.token);
+        final userCredential = await FirebaseAuth.instance
+            .signInWithCredential(facebookCredential);
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
@@ -148,28 +117,26 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 }
 
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+final GoogleSignIn googleSignIn = GoogleSignIn();
 
+Future<void> signup(BuildContext context) async {
+  final FirebaseAuth auth = FirebaseAuth.instance;
 
-  Future<void> signup(BuildContext context) async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
+  final GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
+  if (googleSignInAccount != null) {
+    final GoogleSignInAuthentication googleSignInAuthentication =
+        await googleSignInAccount.authentication;
+    final AuthCredential authCredential = GoogleAuthProvider.credential(
+        idToken: googleSignInAuthentication.idToken,
+        accessToken: googleSignInAuthentication.accessToken);
 
-    final GoogleSignInAccount? googleSignInAccount = await googleSignIn
-        .signIn();
-    if (googleSignInAccount != null) {
-      final GoogleSignInAuthentication googleSignInAuthentication =
-      await googleSignInAccount.authentication;
-      final AuthCredential authCredential = GoogleAuthProvider.credential(
-          idToken: googleSignInAuthentication.idToken,
-          accessToken: googleSignInAuthentication.accessToken);
+    // Getting users credential
+    UserCredential result = await auth.signInWithCredential(authCredential);
 
-      // Getting users credential
-      UserCredential result = await auth.signInWithCredential(authCredential);
-
-      if (result != null) {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => const HomePage()));
-      } // if result not null we simply call the MaterialpageRoute,
-      // for go to the HomePage screen
-    }
+    if (result != null) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const HomePage()));
+    } // if result not null we simply call the MaterialpageRoute,
+    // for go to the HomePage screen
   }
+}
